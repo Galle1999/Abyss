@@ -76,6 +76,16 @@ new PlayerInfo[MAX_PLAYERS][PlayerData];
 
 new skinlist = mS_INVALID_LISTID;
 
+// Sistema de reportes
+enum E_REPORT
+{
+    REPORT_PLAYER_ID,    // Quién reporta
+    REPORT_TARGET_ID,    // A quién se reporta
+    REPORT_MESSAGE[128]  // Motivo del reporte
+};
+new Reportes[MAX_PLAYERS][E_REPORT];
+new Reporte_Count = 0;
+
 //Textdraws variables
 new Text:FPS;
 new Text:porcentaje;
@@ -96,3 +106,6 @@ new PlayerText:TextDrawAsesinatosPorcentaje[MAX_PLAYERS];
 new PlayerText:TextDrawMuertes[MAX_PLAYERS];
 new PlayerText:TextDrawMuertesPorcentaje[MAX_PLAYERS];
 new bool:textdrawVisible[MAX_PLAYERS];
+
+//Textdraw de kills
+new PlayerText:DeathTextDraw[MAX_PLAYERS];

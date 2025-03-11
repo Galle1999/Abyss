@@ -22,6 +22,67 @@ CMD:credits(playerid, params[])
     return 1;
 }
 
+CMD:report(playerid, params[])
+{
+    if (!IsPlayerConnected(playerid))
+    {
+        return 0;
+    }
+
+    new target_id, motivo[128];
+    if (sscanf(params, "us[128]", target_id, motivo))
+    {
+        SendClientMessage(playerid, 0xFF0000FF, "USAGE: /report [player ID] [reason]");
+        return 1;
+    }
+
+    // Verificar si el jugador objetivo existe y está conectado
+    if (!IsPlayerConnected(target_id) || target_id == INVALID_PLAYER_ID)
+    {
+        SendClientMessage(playerid, COLOR_RED, "Player not found or not online.");
+        return 1;
+    }
+
+    // Verificar si el jugador no se está reportando a sí mismo
+    if (target_id == playerid)
+    {
+        SendClientMessage(playerid, 0xFF0000FF, "You can't report yourself.");
+        return 1;
+    }
+
+    // Verificar si hay espacio para más reportes
+    if (Reporte_Count >= MAX_PLAYERS)
+    {
+        SendClientMessage(playerid, COLOR_RED, "The reporting system is full. Please try again later.");
+        return 1;
+    }
+
+    // Almacenar el reporte
+    Reportes[Reporte_Count][REPORT_PLAYER_ID] = playerid; // Quién reporta
+    Reportes[Reporte_Count][REPORT_TARGET_ID] = target_id; // A quién se reporta
+    format(Reportes[Reporte_Count][REPORT_MESSAGE], 128, motivo); // Motivo del reporte
+    Reporte_Count++;
+
+    // Notificar al jugador
+    SendClientMessage(playerid, 0x00FF00FF, "Your report has been sent to the administrators.");
+
+    // Notificar a los administradores
+    new admin_message[256], reporter_name[MAX_PLAYER_NAME], target_name[MAX_PLAYER_NAME];
+    GetPlayerName(playerid, reporter_name, sizeof(reporter_name));
+    GetPlayerName(target_id, target_name, sizeof(target_name));
+    format(admin_message, sizeof(admin_message), "[REPORT] %s (ID: %d) reported to %s (ID: %d): %s", reporter_name, playerid, target_name, target_id, motivo);
+
+    for (new i = 0; i < MAX_PLAYERS; i++)
+    {
+        if (IsPlayerConnected(i) && PlayerInfo[i][pNivelAdmin] >= ADMIN_AYUDANTE)
+        {
+            SendClientMessage(i, 0xFFA500FF, admin_message); // Color naranja para los reportes
+        }
+    }
+
+    return 1;
+}
+
 CMD:fps(playerid, params[])
 {
     new fps = GetPlayerFPS(playerid);

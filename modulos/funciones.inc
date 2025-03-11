@@ -7,10 +7,10 @@ stock SetPlayerSkinAndSave(playerid, skinid)
     PlayerInfo[playerid][pSkin] = skinid;
     new query[256];
     format(query, sizeof(query),
-        "UPDATE Jugadores SET pSkin = %d WHERE pID = %d",
-        PlayerInfo[playerid][pSkin],
-        PlayerInfo[playerid][pID]
-    );
+           "UPDATE Jugadores SET pSkin = %d WHERE pID = %d",
+           PlayerInfo[playerid][pSkin],
+           PlayerInfo[playerid][pID]
+          );
     db_query(database, query);
 
     // Mensaje de confirmación para el jugador
@@ -29,6 +29,13 @@ public KickPlayerDelayed(playerid)
         Kick(playerid); // Expulsar al jugador
     }
     return 1;
+}
+
+forward HideDeathTextDraw(killerid, victimid);
+public HideDeathTextDraw(killerid, victimid)
+{
+    PlayerTextDrawHide(killerid, DeathTextDraw[killerid]);
+    PlayerTextDrawHide(victimid, DeathTextDraw[victimid]);
 }
 
 forward ActualizarTextDraws(playerid);
@@ -228,7 +235,12 @@ stock ActualizarEstadoDelBot()
     return 1;
 }
 
-// Sección de comandos Discord
+//Conseguir el tiempo del comando ejecutado
+stock GetPlayerCommandTime(playerid)
+{
+    return PlayerCommandTime[playerid];
+}
+
 forward OnDiscordJugadoresCommand(DCC_Interaction:interaction);
 public OnDiscordJugadoresCommand(DCC_Interaction:interaction)
 {
@@ -257,19 +269,40 @@ public OnDiscordJugadoresCommand(DCC_Interaction:interaction)
         return 1;
     }
 
+    // Crear el embed
+    new DCC_Embed:embed = DCC_CreateEmbed(
+            "Players Online :desktop: :white_check_mark:", // Título del Embed
+            "",                                            // Descripción (opcional)
+            "",                                            // URL (opcional)
+            "",                                            // Timestamp (opcional)
+            0x3498DB,                                      // Color del Embed (azul)
+            "Abyss Deathmatch",                            // Texto del pie de página
+            "https://i.imgur.com/s5mjJsW.jpeg",            // URL del icono en el pie de página
+            "",                                            // Miniatura (opcional)
+            ""                                             // Imagen principal (opcional)
+                                            );
+
     // Construir el mensaje con los jugadores conectados
-    new message[600];
+    new message[512];
     format(message, sizeof(message), "Connected players (%d):\n%s", count, players);
 
     // Verifica que el mensaje no exceda el límite de Discord
-    if (strlen(message) > 2000) // Si excede, envía un mensaje genérico
+    if (strlen(message) > 1024) // Límite de caracteres para un campo de embed
     {
         DCC_SendInteractionMessage(interaction, "The list of online players is too long to display.");
     }
     else
     {
-        DCC_SendInteractionMessage(interaction, message);
+        // Agregar el mensaje al embed
+        DCC_AddEmbedField(embed, "Players", message, false);
+
+        // Enviar el embed como respuesta a la interacción
+        DCC_SendInteractionEmbed(interaction, embed, "");
     }
+
+    // Liberar memoria del embed
+    DCC_DeleteEmbed(embed);
+
     return 1;
 }
 
@@ -280,6 +313,78 @@ public OnDiscordIPCommand(DCC_Interaction:interaction)
     return 1;
 }
 
+
+forward OnDiscordStatsCommand(DCC_Interaction:interaction);
+public OnDiscordStatsCommand(DCC_Interaction:interaction)
+{
+    new playerID;
+    new params[128];
+
+    // Obtén el contenido de la interacción (parámetros)
+    DCC_GetInteractionContent(interaction, params, sizeof(params));
+
+    // Extrae el ID del jugador de los parámetros
+    if (sscanf(params, "d", playerID))
+    {
+        // Si no se proporciona un ID válido, muestra el uso correcto del comando
+        DCC_SendInteractionMessage(interaction, "Usage: /stats <playerID>");
+        return 1;
+    }
+
+    if (IsPlayerConnected(playerID))
+    {
+        // Obtén el nombre del jugador
+        new playerName[MAX_PLAYER_NAME];
+        GetPlayerName(playerID, playerName, sizeof(playerName));
+
+        // Obtén el skin ID del jugador desde PlayerInfo
+        new skinID = PlayerInfo[playerID][pSkin];
+
+        // Crea el embed con las estadísticas del jugador
+        new DCC_Embed:embed = DCC_CreateEmbed(
+            "Player Statistics", // Título del Embed
+            "",                 // Descripción (opcional)
+            "",                 // URL (opcional)
+            "",                 // Timestamp (opcional)
+            0x00FF00,           // Color del Embed (verde)
+            "Abyss Deathmatch", // Texto del pie de página
+            "",                 // URL del icono en el pie de página (opcional)
+            "",                 // Miniatura (opcional)
+            ""                  // Imagen principal (opcional)
+        );
+
+        // Construye el mensaje con las estadísticas del jugador
+        new stats[512];
+        format(stats, sizeof(stats), "**Name:** %s\n**Kills:** %d\n**Deaths:** %d\n**Score:** %d\n**Skin:** %d\n**Duels Won:** %d\n**Duels Lost:** %d\n**Country:** %s",
+            playerName,
+            PlayerInfo[playerID][pAsesinatos],
+            PlayerInfo[playerID][pMuertes],
+            PlayerInfo[playerID][pScore],
+            skinID,
+            PlayerInfo[playerID][pDuelosGanados],
+            PlayerInfo[playerID][pDuelosPerdidos],
+            PlayerInfo[playerID][pPais]);
+
+        // Agrega las estadísticas al embed
+        DCC_AddEmbedField(embed, "Stats", stats, false);
+
+        // Añadir la imagen de la skin del jugador
+        new skinURL[128];
+        format(skinURL, sizeof(skinURL), "https://assets.open.mp/assets/images/skins/%d.png", skinID);
+        DCC_SetEmbedImage(embed, skinURL);
+
+        // Envía el embed como respuesta a la interacción
+        DCC_SendInteractionEmbed(interaction, embed, "");
+
+        // Libera la memoria del embed
+        DCC_DeleteEmbed(embed);
+    }
+    else
+    {
+        DCC_SendInteractionMessage(interaction, "Player not connected");
+    }
+    return 1;
+}
 
 forward DCC_OnMessageCreate(DCC_Message:message);
 public DCC_OnMessageCreate(DCC_Message:message)

@@ -60,7 +60,7 @@ NetstatsTextdraw(playerid)
     TextDrawSetSelectable(Pingporcentaje, 0);
     TextDrawShowForPlayer(playerid, Pingporcentaje);
 
-    Packetloss = TextDrawCreate(577.000000, 5.000000, "PL");
+    Packetloss = TextDrawCreate(577.000000, 5.000000, "Packetloss");
     TextDrawFont(Packetloss, 3);
     TextDrawLetterSize(Packetloss, 0.183332, 1.000000);
     TextDrawTextSize(Packetloss, 400.000000, 17.000000);
@@ -97,7 +97,7 @@ logo(playerid)
     logoTextDraw = TextDrawCreate(575.000000, 24.000000, "_ABYSS DEATHMATCH");
     TextDrawLetterSize(logoTextDraw, 0.18, 0.81);
     TextDrawAlignment(logoTextDraw, 2);
-    TextDrawColor(logoTextDraw, 1097458175);
+    TextDrawColor(logoTextDraw, -1);
     TextDrawSetOutline(logoTextDraw, 1);
     TextDrawBackgroundColor(logoTextDraw, 80);
     TextDrawFont(logoTextDraw, 1);
@@ -216,4 +216,19 @@ CreatePlayerStatsTextDraws(playerid)
     PlayerTextDrawSetProportional(playerid, TextDrawScorePorcentaje[playerid], 1);
     PlayerTextDrawSetSelectable(playerid, TextDrawScorePorcentaje[playerid], 0);
     PlayerTextDrawShow(playerid, TextDrawScorePorcentaje[playerid]);
+}
+
+
+TextdrawKills(playerid)
+{
+    // Crear el TextDraw para el jugador
+    DeathTextDraw[playerid] = CreatePlayerTextDraw(playerid, 320.0, 350.0, " "); // Posición (x, y) y texto inicial vacío
+    PlayerTextDrawAlignment(playerid, DeathTextDraw[playerid], 2); // Centrar el TextDraw
+    PlayerTextDrawBackgroundColor(playerid, DeathTextDraw[playerid], 0x000000FF); // Color de fondo (negro)
+    PlayerTextDrawFont(playerid, DeathTextDraw[playerid], 2); // Fuente del TextDraw
+    PlayerTextDrawLetterSize(playerid, DeathTextDraw[playerid], 0.5, 2.0); // Tamaño de las letras
+    PlayerTextDrawColor(playerid, DeathTextDraw[playerid], 0xba0000AA); // Color del texto (blanco)
+    PlayerTextDrawSetOutline(playerid, DeathTextDraw[playerid], 1); // Borde del texto
+    PlayerTextDrawSetProportional(playerid, DeathTextDraw[playerid], 1); // Texto proporcional
+    PlayerTextDrawTextSize(playerid, DeathTextDraw[playerid], 0.0, 200.0); // Tamaño del cuadro de fondo
 }
