@@ -1,6 +1,6 @@
 //GENERALES
 
-CMD:ayuda(playerid, params[])
+CMD:help(playerid, params[])
 {
     new ayudaList[4024] = "{b6ff86}Server help:\n";
     strcat(ayudaList, "{FFFFFF}- If you have questions, you can use the /doubt command to have an administrator read it..\n");
@@ -12,7 +12,7 @@ CMD:ayuda(playerid, params[])
     return 1;
 }
 
-CMD:creditos(playerid, params[])
+CMD:credits(playerid, params[])
 {
     new str[150 + 1];
 
