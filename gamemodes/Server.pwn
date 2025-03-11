@@ -10,6 +10,7 @@
 #include <zcmd>
 #include <samp_bcrypt>
 #include <mSelection>
+#include <BCMD1>
 
 //Modulos
 #include "../modulos/variables.inc"
@@ -29,7 +30,7 @@ main()
     printf("  *********************************");
     printf("  *                               *");
     printf("  *     Abyss Deathmatch 2025     *");
-    printf("  *           Spanish             *");
+    printf("  *           English             *");
     printf("  *                               *");
     printf("  *********************************");
     printf("  *                               *");
@@ -73,6 +74,7 @@ public OnGameModeInit()
     // Registrar comando Discord
     DCC_CreateCommand("players", "Players connected to the server", "OnDiscordJugadoresCommand");
     DCC_CreateCommand("ip", "Server IP", "OnDiscordIPCommand");
+    DCC_CreateCommand("stats", "Player statistics", "OnDiscordStatsCommand");
 
     // Abrir la base de datos
     database = db_open("usuarios.db");
@@ -117,47 +119,21 @@ public OnPlayerConnect(playerid)
     GetPlayerCity(playerid, city, sizeof(city));
     GetPlayerIp(playerid, ip, sizeof(ip));
 
-    // Crear un Embed para el canal público (irc)
-    new DCC_Embed:embed = DCC_CreateEmbed(
-            "Player connected :desktop: :white_check_mark:", // Título del Embed
-            "**A player has joined the server.**",       // Descripción
-            "",                                              // URL opcional
-            "",                                              // Timestamp opcional
-            0x3498DB,                                        // Color del Embed (azul)
-            "Abyss Deathmatch",                              // Texto del pie de página
-            "https://i.imgur.com/s5mjJsW.jpeg",              // URL del icono en el pie de página
-            "",                                              // Miniatura
-            ""                                               // Imagen principal
-                                            );
-
-    // Añadir información básica al Embed
-    new mensaje[128];
-    format(mensaje, sizeof(mensaje), "**%s** (ID: %d)", pname, playerid);
-    DCC_AddEmbedField(embed, "Nick", mensaje, false);
-
-    // Enviar el Embed al canal público
-    new DCC_Channel:generalChannel = DCC_FindChannelByName("online");
-    if (generalChannel != DCC_INVALID_CHANNEL)
-    {
-        DCC_SendChannelEmbedMessage(generalChannel, embed, "");
-    }
-
-    DCC_DeleteEmbed(embed); // Liberar memoria del Embed
-
     // Crear un Embed para el canal de administradores (moderator-only)
     new DCC_Embed:adminEmbed = DCC_CreateEmbed(
-                "Details",                // Título del Embed
-                "",                                              // Descripción opcional
-                "",                                              // URL opcional
-                "",                                              // Timestamp opcional
-                0x3498DB,                                        // Color del Embed (azul)
-                "Advanced information",                          // Texto del pie de página
-                "https://i.imgur.com/s5mjJsW.jpeg",              // URL del icono en el pie de página
-                "",                                              // Miniatura
-                ""                                               // Imagen principal
-            );
+        "Player connected :desktop: :white_check_mark:", // Título del Embed
+        "",                                              // Descripción opcional
+        "",                                              // URL opcional
+        "",                                              // Timestamp opcional
+        0x3498DB,                                       // Color del Embed (azul)
+        "Advanced information",                          // Texto del pie de página
+        "https://i.imgur.com/s5mjJsW.jpeg",              // URL del icono en el pie de página
+        "",                                              // Miniatura
+        ""                                               // Imagen principal
+    );
 
     // Añadir detalles sensibles al Embed de administradores
+    new mensaje[128];
     format(mensaje, sizeof(mensaje), "**%s** (ID: %d)", pname, playerid);
     DCC_AddEmbedField(adminEmbed, "Player", mensaje, false);
     format(mensaje, sizeof(mensaje), "**Country:** %s\n**City:** %s\n**IP:** %s", country, city, ip);
@@ -170,15 +146,19 @@ public OnPlayerConnect(playerid)
         DCC_SendChannelEmbedMessage(adminChannel, adminEmbed, "");
     }
 
-    DCC_DeleteEmbed(adminEmbed); // Liberar memoria del Embed
+    // Liberar memoria del Embed
+    DCC_DeleteEmbed(adminEmbed);
 
     // Actualizar el estado del bot
     ActualizarEstadoDelBot();
+
     // Netstats Textdraw
     NetstatsTextdraw(playerid);
     logo(playerid);
     fechatextdraw(playerid);
     CreatePlayerStatsTextDraws(playerid);
+    TextdrawKills(playerid);
+
     // Inicializar todos los campos de PlayerInfo
     PlayerInfo[playerid][pNombre][0] = EOS;
     PlayerInfo[playerid][pPassword][0] = EOS;
@@ -222,49 +202,23 @@ public OnPlayerDisconnect(playerid, reason)
     GetPlayerCity(playerid, city, sizeof(city));
     GetPlayerIp(playerid, ip, sizeof(ip));
 
-    // Crear un Embed para el canal público (irc)
-    new DCC_Embed:embed = DCC_CreateEmbed(
-            "Player disconnected :desktop: :x:",            // Título del Embed
-            "**A player has left the server.**",       // Descripción
-            "",                                              // URL opcional
-            "",                                              // Timestamp opcional
-            0xE74C3C,                                        // Color del Embed (rojo)
-            "Abyss Deathmatch",                              // Texto del pie de página
-            "https://i.imgur.com/s5mjJsW.jpeg",              // URL del icono en el pie de página
-            "",                                              // Miniatura
-            ""                                               // Imagen principal
-                                            );
-
-    // Añadir información básica al Embed
-    new mensaje[128];
-    format(mensaje, sizeof(mensaje), "**%s** (ID: %d)", pname, playerid);
-    DCC_AddEmbedField(embed, "Nick", mensaje, false);
-
-    // Enviar el Embed al canal público
-    new DCC_Channel:generalChannel = DCC_FindChannelByName("online");
-    if (generalChannel != DCC_INVALID_CHANNEL)
-    {
-        DCC_SendChannelEmbedMessage(generalChannel, embed, "");
-    }
-
-    DCC_DeleteEmbed(embed); // Liberar memoria del Embed
-
     // Crear un Embed para el canal de administradores (moderator-only)
     new DCC_Embed:adminEmbed = DCC_CreateEmbed(
-                "Details",              // Título del Embed
-                "",                                              // Descripción opcional
-                "",                                              // URL opcional
-                "",                                              // Timestamp opcional
-                0xE74C3C,                                        // Color del Embed (rojo)
-                "Advanced information",                          // Texto del pie de página
-                "https://i.imgur.com/s5mjJsW.jpeg",              // URL del icono en el pie de página
-                "",                                              // Miniatura
-                ""                                               // Imagen principal
-            );
+        "Player disconnected :desktop: :x:", // Título del Embed
+        "",                                              // Descripción opcional
+        "",                                              // URL opcional
+        "",                                              // Timestamp opcional
+        0xE74C3C,                                       // Color del Embed (rojo)
+        "Advanced information",                          // Texto del pie de página
+        "https://i.imgur.com/s5mjJsW.jpeg",              // URL del icono en el pie de página
+        "",                                              // Miniatura
+        ""                                               // Imagen principal
+    );
 
     // Añadir detalles sensibles al Embed de administradores
+    new mensaje[128];
     format(mensaje, sizeof(mensaje), "**%s** (ID: %d)", pname, playerid);
-    DCC_AddEmbedField(adminEmbed, "Nick", mensaje, false);
+    DCC_AddEmbedField(adminEmbed, "Player", mensaje, false);
     format(mensaje, sizeof(mensaje), "**Country:** %s\n**City:** %s\n**IP:** %s", country, city, ip);
     DCC_AddEmbedField(adminEmbed, "Details", mensaje, false);
 
@@ -275,7 +229,8 @@ public OnPlayerDisconnect(playerid, reason)
         DCC_SendChannelEmbedMessage(adminChannel, adminEmbed, "");
     }
 
-    DCC_DeleteEmbed(adminEmbed); // Liberar memoria del Embed
+    // Liberar memoria del Embed
+    DCC_DeleteEmbed(adminEmbed);
 
     // Actualizar estado del bot
     ActualizarEstadoDelBot();
@@ -340,6 +295,25 @@ public OnPlayerDeath(playerid, killerid, WEAPON:reason)
             format(message, sizeof(message), "%s has reached %d kills without dying", name, PlayerInfo[killerid][pRachas]);
             SendClientMessageToAll(0x008000FF, message); // Verde oscuro
         }
+        // Mensajes personalizados con TextDraws
+        new killerName[MAX_PLAYER_NAME], victimName[MAX_PLAYER_NAME];
+        GetPlayerName(killerid, killerName, sizeof(killerName));
+        GetPlayerName(playerid, victimName, sizeof(victimName));
+
+        // Mensaje para el asesino
+        new killerMessage[128];
+        format(killerMessage, sizeof(killerMessage), "~w~You have killed ~r~%s", victimName);
+        PlayerTextDrawSetString(killerid, DeathTextDraw[killerid], killerMessage);
+        PlayerTextDrawShow(killerid, DeathTextDraw[killerid]);
+
+        // Mensaje para la víctima
+        new victimMessage[128];
+        format(victimMessage, sizeof(victimMessage), "~w~It has killed you ~r~%s", killerName);
+        PlayerTextDrawSetString(playerid, DeathTextDraw[playerid], victimMessage);
+        PlayerTextDrawShow(playerid, DeathTextDraw[playerid]);
+
+        // Ocultar los TextDraws después de 5 segundos
+        SetTimerEx("HideDeathTextDraw", 5000, false, "ii", killerid, playerid);
     }
 
     // Restablecer la racha de asesinatos del jugador que murió
@@ -385,9 +359,14 @@ public OnPlayerRequestSpawn(playerid)
     return 1;
 }
 
-public OnPlayerCommandText(playerid, cmdtext[])
+public OnPlayerCommandPerformed(playerid, cmdtext[], success)
 {
-    return 0;
+    return 1;
+}
+
+public OnPlayerCommandReceived(playerid, cmdtext[])
+{
+    return 1;
 }
 
 public OnPlayerText(playerid, text[])
@@ -492,6 +471,45 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         {
             if (!response) Kick(playerid); // Expulsar si no inicia sesión
             bcrypt_verify(playerid, "OnPasswordVerified", inputtext, PlayerInfo[playerid][pPassword]);
+            return 1;
+        }
+        case DIALOGO_REPORTES: // Diálogo de reportes
+        {
+            if (!response) // Si el jugador hace clic en "Cancelar"
+            {
+                SendClientMessage(playerid, COLOR_RED, "You have closed the reporting dialog.");
+                return 1;
+            }
+
+            // Obtener el ID del reporte seleccionado
+            new reporte_id = listitem + 1; // Los índices comienzan en 0, pero los IDs en 1
+
+            // Verificar si el ID del reporte es válido
+            if (reporte_id < 1 || reporte_id > Reporte_Count)
+            {
+                SendClientMessage(playerid, COLOR_RED, "Invalid report ID.");
+                return 1;
+            }
+
+            // Eliminar el reporte
+            for (new i = reporte_id - 1; i < Reporte_Count - 1; i++)
+            {
+                Reportes[i] = Reportes[i + 1];
+            }
+            Reporte_Count--;
+
+            // Notificar al administrador
+            new admin_message[128];
+            format(admin_message, sizeof(admin_message), "You have closed the report #%d.", reporte_id);
+            SendClientMessage(playerid, 0x00FF00FF, admin_message);
+
+            // Notificar al jugador que envió el reporte
+            new reporter_id = Reportes[reporte_id - 1][REPORT_PLAYER_ID];
+            if (IsPlayerConnected(reporter_id))
+            {
+                SendClientMessage(reporter_id, 0x00FF00FF, "Your report has been reviewed and closed by an administrator.");
+            }
+
             return 1;
         }
     }
